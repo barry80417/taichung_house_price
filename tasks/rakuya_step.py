@@ -52,16 +52,21 @@ def load(**kwargs):
     hook = MongoHook(conn_id="mongo_default")
     collections = hook.get_collection("rakuya_detail", "result")
     collections.insert_many(data)
-    # collections.aggregate([
-    #     {
-    #         '$group':{'_id':{'建案座落位置': '$建案座落位置', '建物': '$建物', '主建物':'$主建物','土地登記': '$土地登記','年份': '$年份'},'count': {'$sum': 1}, 'dups': {'$addToSet': '$_id'}}
-    #     },
-    #     {
-    #         '$match': {'count': {'$gt':1}}
-    #     }]).forEach(function(doc){
-    #         doc.dups.shift();
-    #         collections.remove({'_id': {'$in': doc.dups}});
-    #     })
+    doc = collections.aggregate([
+        {
+            '$group':{'_id':{'建案座落位置': '$建案座落位置', '建物': '$建物', '主建物':'$主建物','土地登記': '$土地登記','年份': '$年份'},'count': {'$sum': 1}, 'dups': {'$addToSet': '$_id'}}
+        },
+        {
+            '$match': {'count': {'$gt':1}}
+        }])
 
+    for i in doc:
+        first = 1
+        for j in collections.find(i['_id']):
+            if first ==1:
+                first=0
+                continue
+            else:
+                collections.delete_one({'_id':j['_id']})
     hook.close_conn()
     return 'done'
