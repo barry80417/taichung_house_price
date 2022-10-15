@@ -9,40 +9,41 @@ def labe_find(str_find):
     for p in range(len(paging.find_all('span',class_='list__label'))):
         if str_find in paging.find_all('span',class_='list__label')[p].text.strip():
             return paging.find_all('span',class_='list__content')[p].text.strip()
+
+def car_type(str_find):
+    ctype = ['描述','類型']
+    for t in range(len(paging.find_all('ul',class_ = 'group')[2].find_all('span',class_='list__label'))):
+        if str_find=='有車位':
+            if paging.find_all('ul',class_ = 'group')[2].find_all('span',class_='list__label')[t].text.strip() in ctype:
+                return paging.find_all('ul',class_ = 'group')[2].find_all('span',class_='list__content')[t].get_text()
+            else:
+                pass
+        else:
+            return None
             
-item = 1
-url = 'https://www.rakuya.com.tw/sell/result?city=8&sort=11&browsed=0&page='+str(item)
-
-user_agent = UserAgent(use_cache_server=False)
-m_header = user_agent.random
-
-headers = {"User-Agent": m_header,
-           "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-           "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.3",
-           "Accept-Encoding": "none",
-           "Accept-Language": "en-US,en;q=0.8",
-           "Connection": "keep-alive",
-           "content-Type":"application/json"}
-request = requests.get(url, headers=headers)
-web2 = BeautifulSoup(request.text,'html5lib')
-total_page = int(web2.find('p',class_='pages').text.split('/')[1][:-1].strip())
-
 all_url=[]
-for item in range(1):
+for item in range(1,11):
+    user_agent = UserAgent()
+    m_header = user_agent.random
+    headers = {"User-Agent": m_header,
+               "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+               "Accept-Charset": "ISO-8859-1,utf-8;q=0.7,*;q=0.3",
+               "Accept-Encoding": "none",
+               "Accept-Language": "en-US,en;q=0.8",
+               "Connection": "keep-alive",
+               "content-Type":"application/json"}
+    url = f'https://www.rakuya.com.tw/sell/result?city=8&sort=11&browsed=0&page={item}'
+    request = requests.get(url,headers=headers)
+    web2 = BeautifulSoup(request.text,'html5lib')
+    
     for web in web2.find_all('a', class_='browseItemDetail'):
         all_url.append(web.get('href'))
-    item+=1
     delay_choice = [1,3,5,7,9,20]
     delay = random.choice(delay_choice)
     time.sleep(delay)
-    
-    m_header = user_agent.random
-    headers = {"User-Agent":m_header}
-    request = requests.get(url,headers=headers)
-    web2 = BeautifulSoup(request.text,'html5lib')
 
-print('url dowload complete')
 word = ['開','放','式','格','局','-','']
+
 rakuya=[]
 for p_url in all_url:
     try:
@@ -50,6 +51,7 @@ for p_url in all_url:
     except:
         pass
     paging = BeautifulSoup(request.text,'html5lib')
+
     rakuya.append({
                     '標題': paging.find('span',class_='title').text.strip(),            
                     '建案座落位置': paging.find('h1',class_='txt__address').text.strip(),
@@ -64,7 +66,7 @@ for p_url in all_url:
                     '年份': paging.find_all('ul',class_='list__info')[0].find_all('li')[2].get_text()[:-3],
                     '樓層':labe_find('樓層'),
                     '車位與否':paging.find_all('div',class_='list__info-sub')[2].find('span',class_='list__content').text.strip(),
-                    '車位類型':paging.find_all('ul',class_='group')[2].find_all('span',class_='list__content')[1].text.strip()if paging.find_all('div',class_='list__info-sub')[2].find('span',class_='list__content').text.strip()=='有車位' else None,
+                    '車位類型': car_type('有車位') if paging.find_all('div',class_='list__info-sub')[2].find('span',class_='list__content').text.strip()=='有車位' else None,
                     '開價': paging.find('span',class_='txt__price-total').text[:-1].strip(),
                     '特色描述' : paging.find('div',class_='block__info-detail').find('div',class_='content').text.strip().replace(u'\xa0',u'') if paging.find('div',class_='block__info-detail').find('div',class_='content') else None
             })
